@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { createHmac } from 'node:crypto';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const envPath = join(here, '..', 'apps', 'api', '.env');
@@ -34,6 +35,20 @@ const env = readEnv();
 const BASE = process.env.API_URL ?? 'http://127.0.0.1:3001';
 const ADMIN_EMAIL = env.ADMIN_EMAIL ?? 'admin@parche.studio';
 const ADMIN_PASSWORD = env.ADMIN_PASSWORD ?? 'Parche2026*';
+
+/**
+ * Firma un JWT HS256 igual que la API, sin dependencias.
+ * Sirve para comprobar que la firma, por sí sola, no da acceso: el usuario
+ * tiene que seguir existiendo y estar activo.
+ */
+function signTokenFor(payload, secret) {
+  const encode = (value) =>
+    Buffer.from(JSON.stringify(value)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const body = encode({ alg: 'HS256', typ: 'JWT' }) + '.' + encode({ ...payload, iat: now, exp: now + 600 });
+  const signature = createHmac('sha256', secret).update(body).digest('base64url');
+  return `${body}.${signature}`;
+}
 
 let passed = 0;
 let failed = 0;
@@ -119,6 +134,17 @@ async function main() {
 
   const me = await api('/api/auth/me', { token });
   check('GET /api/auth/me identifica al administrador', me.payload?.user?.email === ADMIN_EMAIL);
+
+  // La firma correcta no basta: un token emitido para un usuario que ya no
+  // existe (o desactivado) debe dejar de servir de inmediato.
+  if (env.JWT_SECRET) {
+    const ghostToken = signTokenFor(
+      { sub: 'usuario-que-no-existe', email: 'fantasma@parche.studio', role: 'admin' },
+      env.JWT_SECRET,
+    );
+    const ghost = await api('/api/admin/dashboard', { token: ghostToken });
+    check('Un token firmado para un usuario inexistente se rechaza → 401', ghost.status === 401, `recibido ${ghost.status}`);
+  }
 
   // La prueba no asume una base vacía: puede haber pedidos demo o reales.
   // Se toman las cifras de partida y se comprueban los incrementos.

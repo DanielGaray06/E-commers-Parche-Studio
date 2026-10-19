@@ -44,7 +44,7 @@ pnpm dev:web             # solo la tienda
 pnpm dev:admin           # solo el panel
 pnpm dev:api             # solo la API
 pnpm build               # compila las tres apps
-node scripts/smoke-api.mjs   # prueba de humo end-to-end (57 comprobaciones)
+node scripts/smoke-api.mjs   # prueba de humo end-to-end (58 comprobaciones)
 ```
 
 ### Variables de entorno
@@ -67,7 +67,9 @@ En producción, la tienda puede apuntar a otra URL de API con `VITE_API_URL`.
 
 Entra en <http://localhost:5174> con el correo y la contraseña definidos en `.env`.
 La primera vez, `pnpm db:setup` crea ese usuario (la contraseña se guarda con `scrypt`,
-nunca en texto plano).
+nunca en texto plano). Cada petición comprueba que el usuario siga existiendo y activo, así
+que eliminar o desactivar una cuenta revoca su sesión al instante, sin esperar a que caduque
+el token.
 
 | Sección | Qué permite |
 | --- | --- |
