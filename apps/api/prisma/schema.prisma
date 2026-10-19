@@ -1,0 +1,144 @@
+// ---------------------------------------------------------------------------
+// PARCHE Studio — esquema de datos (MySQL)
+// ---------------------------------------------------------------------------
+// Notas de diseño:
+//  * Los campos tipo lista (imágenes, tallas, colores, etiquetas) se guardan
+//    como JSON serializado en un campo de texto: es simple, portable y
+//    suficiente para el tamaño de este catálogo.
+//  * Los precios se guardan como enteros en pesos colombianos (COP no usa
+//    decimales), evitando errores de coma flotante.
+//  * `OrderItem` guarda una copia del nombre y del precio del producto en el
+//    momento de la venta, para que el histórico no cambie si el producto se
+//    edita o se elimina después.
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique @db.VarChar(190)
+  name         String   @db.VarChar(120)
+  passwordHash String   @db.VarChar(255)
+  role         String   @default("admin") @db.VarChar(32)
+  active       Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders Order[] @relation("OrderCreatedBy")
+
+  @@map("users")
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  slug      String    @unique @db.VarChar(120)
+  name      String    @db.VarChar(120)
+  blurb     String?   @db.VarChar(255)
+  /** Icono del sistema de diseño que usa la tienda (tee, pants, cap…). */
+  icon      String?   @db.VarChar(40)
+  position  Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id             String    @id @default(cuid())
+  sku            String    @unique @db.VarChar(64)
+  slug           String    @unique @db.VarChar(160)
+  name           String    @db.VarChar(160)
+  description    String    @db.Text
+  price          Int
+  compareAtPrice Int?
+  categoryId     String
+  category       Category  @relation(fields: [categoryId], references: [id])
+  images         String    @db.Text
+  sizes          String    @db.Text
+  colors         String    @db.Text
+  tags           String    @db.Text
+  stock          Int       @default(0)
+  material       String?   @db.VarChar(160)
+  fit            String?   @db.VarChar(120)
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  orderItems OrderItem[]
+
+  @@index([categoryId])
+  @@index([active])
+  @@map("products")
+}
+
+model Order {
+  id           String  @id @default(cuid())
+  reference    String  @unique @db.VarChar(32)
+  // pendiente | confirmado | enviado | entregado | cancelado
+  status       String  @default("pendiente") @db.VarChar(24)
+  // whatsapp | manual
+  channel      String  @default("whatsapp") @db.VarChar(24)
+
+  customerName     String  @db.VarChar(160)
+  customerPhone    String? @db.VarChar(40)
+  neighborhood     String? @db.VarChar(120)
+  address          String? @db.VarChar(255)
+  deliveryMethod   String? @db.VarChar(40)
+  notes            String? @db.Text
+
+  subtotal        Int
+  shipping        Int     @default(0)
+  shippingPending Boolean @default(true)
+  total           Int
+
+  createdById String?
+  createdBy   User?   @relation("OrderCreatedBy", fields: [createdById], references: [id])
+
+  items       OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  confirmedAt DateTime?
+  deliveredAt DateTime?
+  canceledAt  DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  name      String  @db.VarChar(160)
+  size      String? @db.VarChar(32)
+  color     String? @db.VarChar(32)
+  unitPrice Int
+  quantity  Int
+  lineTotal Int
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+/// Configuración editable desde el panel (clave → JSON serializado).
+model Setting {
+  key       String   @id @db.VarChar(80)
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

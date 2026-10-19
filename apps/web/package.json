@@ -1,0 +1,15 @@
+{
+  "name": "@parche/web",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Tienda pública de PARCHE Studio (Vite + JavaScript moderno).",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}

@@ -157,3 +157,33 @@ export const DEMO_TAG = '⚠️ DEMO';
  * marcador de lugar. Se usa para avisar al cliente en el mensaje generado.
  */
 export const whatsappIsPlaceholder = () => site.whatsapp.isPlaceholder;
+
+/* ===========================================================================
+   Configuración en caliente (la que llega de la API)
+   ---------------------------------------------------------------------------
+   A partir de ahora la fuente de verdad es la base de datos y se edita desde
+   el panel de administración; este archivo sigue siendo el valor inicial y el
+   respaldo si la API no responde.
+
+   `applyRemoteConfig` combina lo que llega sobre lo de aquí, sin destruir el
+   objeto: las funciones que leen `site.algo` en tiempo de ejecución ven los
+   valores nuevos.
+   =========================================================================== */
+
+function isPlainObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function mergeInto(target, patch) {
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined) continue;
+    if (isPlainObject(value) && isPlainObject(target[key])) mergeInto(target[key], value);
+    else target[key] = value;
+  }
+}
+
+/** Aplica la configuración que viene de la API sobre la del código. */
+export function applyRemoteConfig(remote) {
+  if (isPlainObject(remote)) mergeInto(site, remote);
+  return site;
+}

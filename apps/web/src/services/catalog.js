@@ -3,10 +3,76 @@
    ---------------------------------------------------------------------------
    Encapsula toda la lógica de consulta, búsqueda, filtrado y ordenamiento.
    Las páginas nunca leen `products` directamente: siempre pasan por aquí.
+
+   Origen de los datos:
+   * Por defecto, el catálogo que vive en `src/data/products.js`. Así la tienda
+     funciona aunque la API esté apagada o el sitio se despliegue como archivos
+     estáticos sin backend.
+   * Al arrancar, `main.js` intenta traer el catálogo real desde la API y, si lo
+     consigue, reemplaza estos datos con `applyCatalog()`. A partir de ahí el
+     panel de administración es quien manda.
    =========================================================================== */
 
-import { products, categories, COLORS } from '../data/products.js';
+import { products as seedProducts, categories as seedCategories, COLORS } from '../data/products.js';
 import { normalizeText } from '../utils/dom.js';
+
+/** Catálogo activo (empieza siendo el del código y puede venir de la API). */
+let products = [...seedProducts];
+let categories = [...seedCategories];
+let source = 'seed';
+
+/* --- Origen remoto -------------------------------------------------------- */
+
+function normalizeProduct(product) {
+  return {
+    ...product,
+    category: product.category ?? product.categoryId ?? '',
+    images: Array.isArray(product.images) ? product.images : [],
+    sizes: Array.isArray(product.sizes) ? product.sizes : [],
+    colors: Array.isArray(product.colors) ? product.colors : [],
+    tags: Array.isArray(product.tags) ? product.tags : [],
+    price: Number(product.price) || 0,
+    compareAtPrice: product.compareAtPrice ?? null,
+    stock: Number(product.stock) || 0,
+    material: product.material ?? '',
+    fit: product.fit ?? '',
+  };
+}
+
+/**
+ * Reemplaza el catálogo activo con el que llega de la API.
+ * La paleta de colores se muta EN SITIO a propósito: así todos los módulos que
+ * ya importaron `COLORS` (portadas, filtros, mensajes) ven la paleta nueva.
+ */
+export function applyCatalog({ products: remoteProducts, categories: remoteCategories, colors } = {}) {
+  if (Array.isArray(remoteProducts) && remoteProducts.length > 0) {
+    products = remoteProducts.map(normalizeProduct);
+    source = 'api';
+  }
+
+  if (Array.isArray(remoteCategories) && remoteCategories.length > 0) {
+    categories = remoteCategories.map((category) => ({
+      id: category.id ?? category.slug,
+      name: category.name,
+      blurb: category.blurb ?? '',
+      icon: category.icon ?? 'tag',
+    }));
+  }
+
+  if (Array.isArray(colors) && colors.length > 0) {
+    for (const key of Object.keys(COLORS)) delete COLORS[key];
+    for (const color of colors) COLORS[color.id] = { name: color.name, hex: color.hex };
+  }
+
+  return { products: products.length, categories: categories.length };
+}
+
+/** ¿El catálogo activo es el de respaldo que viene en el código? */
+export function isUsingSeedCatalog() {
+  return source === 'seed';
+}
+
+/* --- Consultas ------------------------------------------------------------ */
 
 /** Todos los productos (copia defensiva). */
 export function getProducts() {

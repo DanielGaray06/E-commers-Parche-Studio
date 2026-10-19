@@ -14,7 +14,7 @@
 
 import './styles/main.css';
 
-import { site } from './config/site.config.js';
+import { site, applyRemoteConfig } from './config/site.config.js';
 import { qs, qsa, lockScroll } from './utils/dom.js';
 import { toast } from './components/toast.js';
 import { headerHtml, updateCartBadge } from './components/header.js';
@@ -32,6 +32,8 @@ import * as checkout from './pages/checkout.js';
 import { infoPage, notFoundPage } from './pages/info.js';
 import { navigate, currentQuery, replaceQuery, startRouter } from './router.js';
 import { init as initCart, subscribe as subscribeCart, add as addToCart, clear as clearCart } from './services/cart.js';
+import { applyCatalog } from './services/catalog.js';
+import { fetchBootstrap } from './services/api.js';
 
 /* --- Referencias ---------------------------------------------------------- */
 
@@ -373,7 +375,7 @@ function onClick(event) {
   handleAction(action, target);
 }
 
-function onSubmit(event) {
+async function onSubmit(event) {
   const form = event.target.closest('form[data-action]');
   if (!form) return;
   event.preventDefault();
@@ -381,7 +383,15 @@ function onSubmit(event) {
   if (form.dataset.action === 'search-form') return doSearch(form);
 
   if (form.dataset.action === 'checkout-form') {
-    const result = checkout.tryReview();
+    const submitButton = form.querySelector('[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.dataset.label = submitButton.textContent ?? '';
+      submitButton.textContent = 'Registrando pedido…';
+    }
+
+    const result = await checkout.tryReview();
+
     if (result.ok) {
       toast('Revisa tu pedido antes de enviarlo.', { type: 'info' });
       rerender();
@@ -452,21 +462,42 @@ function updateCoverageHint() {
 /* --- Arranque ------------------------------------------------------------ */
 
 function bootstrap() {
-  initCart();
-  mountShell();
+  // 1) Se intenta traer el catálogo y la configuración reales de la API.
+  //    Si algo falla, se sigue con los datos del código: la tienda nunca se
+  //    queda en blanco ni bloquea la compra por WhatsApp.
+  void loadRemoteData().finally(() => {
+    initCart();
+    mountShell();
 
-  subscribeCart(() => {
-    updateCartBadge();
-    renderCartDrawer();
+    subscribeCart(() => {
+      updateCartBadge();
+      renderCartDrawer();
+    });
+
+    startRouter((route) => renderRoute(route));
+
+    document.addEventListener('click', onClick);
+    document.addEventListener('submit', onSubmit);
+    document.addEventListener('input', onInput);
+    document.addEventListener('change', onChange);
+    document.addEventListener('keydown', onKeydown);
   });
+}
 
-  startRouter((route) => renderRoute(route));
+/** Carga catálogo + configuración desde la API (con respaldo silencioso). */
+async function loadRemoteData() {
+  const bootstrapData = await fetchBootstrap();
+  if (!bootstrapData) {
+    if (import.meta.env.DEV) {
+      console.info(
+        '[PARCHE] Usando el catálogo del código. Para ver los cambios del panel, arranca la API (pnpm dev:api).',
+      );
+    }
+    return;
+  }
 
-  document.addEventListener('click', onClick);
-  document.addEventListener('submit', onSubmit);
-  document.addEventListener('input', onInput);
-  document.addEventListener('change', onChange);
-  document.addEventListener('keydown', onKeydown);
+  applyRemoteConfig(bootstrapData.config);
+  applyCatalog(bootstrapData);
 }
 
 bootstrap();

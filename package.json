@@ -1,15 +1,24 @@
 {
   "name": "parche-studio",
   "private": true,
-  "version": "0.1.0",
-  "description": "PARCHE Studio — tienda online de ropa urbana (Medellín). Checkout por WhatsApp.",
-  "type": "module",
+  "version": "0.2.0",
+  "description": "PARCHE Studio — tienda web + panel de administración + API (Fastify, MySQL, Redis).",
+  "packageManager": "pnpm@12.14.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview --port 4173"
+    "dev": "pnpm -r --parallel dev",
+    "dev:web": "pnpm --filter @parche/web dev",
+    "dev:admin": "pnpm --filter @parche/admin dev",
+    "dev:api": "pnpm --filter @parche/api dev",
+    "build": "pnpm --filter @parche/web build && pnpm --filter @parche/admin build && pnpm --filter @parche/api build",
+    "db:push": "pnpm --filter @parche/api prisma:push",
+    "db:migrate": "pnpm --filter @parche/api db:migrate",
+    "db:seed": "pnpm --filter @parche/api seed",
+    "db:setup": "pnpm --filter @parche/api prisma:generate && pnpm --filter @parche/api prisma:push && pnpm --filter @parche/api seed",
+    "infra:up": "node scripts/infra.mjs up",
+    "infra:down": "node scripts/infra.mjs down",
+    "infra:status": "node scripts/infra.mjs status"
   },
   "devDependencies": {
-    "vite": "^7.0.0"
+    "typescript": "^5.7.2"
   }
 }

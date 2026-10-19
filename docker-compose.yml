@@ -1,0 +1,59 @@
+# ---------------------------------------------------------------------------
+# PARCHE Studio — servicios de datos (MySQL + Redis)
+# ---------------------------------------------------------------------------
+# Camino RECOMENDADO cuando la virtualización (AMD-V / VT-x) esté activa.
+# Hoy no se puede usar en este equipo porque WSL2/Docker requieren AMD-V en la
+# BIOS y permisos de administrador. Mientras tanto, `pnpm infra:up` levanta
+# MySQL y Redis instalados con Scoop, con las mismas credenciales y puertos.
+#
+# Uso:
+#   docker compose up -d
+#   docker compose ps
+#   docker compose down          # conserva los datos
+#   docker compose down -v       # borra también los datos
+#
+# Las credenciales coinciden con `apps/api/.env.example`, así que no hay que
+# cambiar nada para pasar de Scoop a Docker.
+# ---------------------------------------------------------------------------
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: parche-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: parche_studio
+      MYSQL_USER: parche
+      MYSQL_PASSWORD: parche
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - '127.0.0.1:3306:3306'
+    volumes:
+      - parche-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-pparche']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: parche-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '127.0.0.1:6379:6379'
+    volumes:
+      - parche-redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  parche-mysql-data:
+  parche-redis-data:

@@ -14,6 +14,7 @@ import { productImage } from '../utils/placeholder.js';
 import { colorInfo } from '../services/catalog.js';
 import { getLines, getSubtotal, getShipping, getTotal, setQuantity, remove, validate } from '../services/cart.js';
 import { buildOrderMessage, buildWhatsAppUrl, generateOrderRef, isPlaceholderNumber } from '../services/whatsapp.js';
+import { registerOrder } from '../services/api.js';
 import { validateCustomer, isWithinCoverage } from '../utils/validators.js';
 import { toast } from '../components/toast.js';
 
@@ -28,10 +29,22 @@ const initialCustomer = () => ({
   observaciones: '',
 });
 
-let state = { customer: initialCustomer(), reviewing: false, orderRef: null, errors: {} };
+/** Estado inicial de la revisión (incluye el pedido registrado en la API). */
+const initialState = () => ({
+  customer: initialCustomer(),
+  reviewing: false,
+  orderRef: null,
+  errors: {},
+  /** Respuesta de la API al registrar el pedido (mensaje y enlace oficiales). */
+  remote: null,
+  /** Error si la API no pudo registrar el pedido (no bloquea la compra). */
+  remoteError: null,
+});
+
+let state = initialState();
 
 export function resetCheckout() {
-  state = { customer: initialCustomer(), reviewing: false, orderRef: null, errors: {} };
+  state = initialState();
 }
 
 export function updateCustomer(field, value) {
@@ -71,6 +84,33 @@ export function buildOrder() {
 
 export function buildMessage() {
   return buildOrderMessage(buildOrder());
+}
+
+/**
+ * Convierte el carrito + los datos de entrega en el cuerpo que espera la API.
+ * Solo se envían referencias y cantidades: el precio lo recalcula el servidor,
+ * así nadie puede manipularlo desde el navegador.
+ */
+export function buildOrderPayload() {
+  const { customer } = state;
+  const esDomicilio = customer.entrega === 'domicilio';
+
+  return {
+    customer: {
+      name: customer.nombre.trim(),
+      phone: customer.telefono.trim() || null,
+      neighborhood: customer.barrio.trim() || null,
+      address: esDomicilio ? customer.direccion.trim() || null : null,
+      deliveryMethod: esDomicilio ? 'domicilio' : 'recoger',
+      notes: customer.observaciones.trim() || null,
+    },
+    items: getLines().map((line) => ({
+      productId: line.product.id,
+      size: line.size || null,
+      color: line.color || null,
+      quantity: line.quantity,
+    })),
+  };
 }
 
 /** Valida el carrito y los datos antes de pasar a la revisión. */
@@ -256,8 +296,31 @@ function formHtml(errors = {}) {
 
 function reviewHtml() {
   const order = buildOrder();
-  const message = buildOrderMessage(order);
-  const url = buildWhatsAppUrl(message);
+
+  // Si la API registró el pedido, se usa SU mensaje y SU enlace: así la tienda
+  // y el cliente hablan exactamente del mismo pedido (misma referencia).
+  const message = state.remote?.message ?? buildOrderMessage(order);
+  const url = state.remote?.whatsappUrl ?? buildWhatsAppUrl(message);
+
+  const remoteNotice = state.remote
+    ? `<div class="notice notice--success">${icon('check', { size: 18 })}<p>
+         Pedido <strong>${escapeHtml(state.remote.order?.reference ?? '')}</strong> registrado. La tienda ya lo ve
+         en su panel como <strong>pendiente de confirmación</strong>.</p></div>`
+    : '';
+
+  const errorNotice = state.remoteError
+    ? `<div class="notice notice--warning">${icon('alert', { size: 18 })}<p>
+         No pudimos registrar el pedido en línea (${escapeHtml(state.remoteError.message)}).
+         Puedes enviarlo igual por WhatsApp: el mensaje está completo y la tienda lo verá en el chat.</p>
+         ${
+           Array.isArray(state.remoteError.details)
+             ? `<ul class="notice__list">${state.remoteError.details
+                 .map((detail) => `<li>${escapeHtml(detail)}</li>`)
+                 .join('')}</ul>`
+             : ''
+         }
+       </div>`
+    : '';
 
   return `
     <section class="review" id="review" aria-labelledby="review-title">
@@ -266,11 +329,14 @@ function reviewHtml() {
         <p>Verifica que todo esté correcto. Este es el mensaje exacto que enviarás por WhatsApp.</p>
       </div>
 
+      ${remoteNotice}
+      ${errorNotice}
+
       ${
         isPlaceholderNumber()
           ? `<div class="notice notice--warning">${icon('alert', { size: 18 })}<p>
-               El número de WhatsApp aún es un marcador de lugar (demostración). El propietario debe configurarlo en
-               <code>src/config/site.config.js</code> antes de publicar el sitio.</p></div>`
+               El número de WhatsApp aún es un marcador de lugar (demostración). Se configura desde el panel en
+               <strong>Ajustes → WhatsApp</strong> antes de publicar el sitio.</p></div>`
           : ''
       }
 
@@ -365,15 +431,31 @@ export function handleCartLineAction(action, key) {
 }
 
 /** Intenta pasar a la revisión. Devuelve los errores si algo falta. */
-export function tryReview() {
+export async function tryReview() {
   const result = validateCheckout();
-  if (result.valid) {
-    state.errors = {};
-    setReviewing(true);
-    return { ok: true };
+  if (!result.valid) {
+    state.errors = result.errors;
+    return { ok: false, errors: result.errors };
   }
-  state.errors = result.errors;
-  return { ok: false, errors: result.errors };
+
+  state.errors = {};
+  state.remote = null;
+  state.remoteError = null;
+  setReviewing(true);
+
+  // Se registra el pedido en la tienda ANTES de abrir WhatsApp, para que
+  // aparezca en el panel y se pueda hacer seguimiento. Si la API no responde,
+  // la compra sigue adelante con el mensaje generado en el navegador.
+  try {
+    const response = await registerOrder(buildOrderPayload());
+    state.remote = response;
+    state.orderRef = response.order?.reference ?? state.orderRef;
+  } catch (error) {
+    state.remoteError = error;
+    state.orderRef = state.orderRef ?? generateOrderRef();
+  }
+
+  return { ok: true };
 }
 
 /** Copia el mensaje al portapapeles. */

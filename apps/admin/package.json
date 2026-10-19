@@ -1,0 +1,15 @@
+{
+  "name": "@parche/admin",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Panel de administración de PARCHE Studio.",
+  "scripts": {
+    "dev": "vite --port 5174",
+    "build": "vite build",
+    "preview": "vite preview --port 4174"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
