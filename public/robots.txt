@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Reemplaza por el dominio real cuando la tienda esté publicada.
+Sitemap: https://parche-studio.example/sitemap.xml

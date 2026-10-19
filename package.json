@@ -1,0 +1,15 @@
+{
+  "name": "parche-studio",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PARCHE Studio — tienda online de ropa urbana (Medellín). Checkout por WhatsApp.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}

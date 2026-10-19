@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es-CO">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0B0B0C" />
+
+    <title>PARCHE Studio — Ropa urbana en Medellín</title>
+    <meta
+      name="description"
+      content="PARCHE Studio es ropa urbana contemporánea hecha para Medellín. Camisetas, pantalones, buzos y chaquetas. Pide fácil por WhatsApp con entrega en Medellín."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://parche-studio.example/" />
+
+    <!-- Open Graph / redes sociales -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PARCHE Studio" />
+    <meta property="og:title" content="PARCHE Studio — Ropa urbana en Medellín" />
+    <meta
+      property="og:description"
+      content="Ropa urbana contemporánea hecha para Medellín. Pide por WhatsApp."
+    />
+    <meta property="og:locale" content="es_CO" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Tipografías (si no hay red, se usan las fuentes del sistema) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Datos estructurados para SEO local -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ClothingStore",
+        "name": "PARCHE Studio",
+        "description": "Tienda de ropa urbana en Medellín. Compra por WhatsApp con entrega local.",
+        "areaServed": { "@type": "City", "name": "Medellín" },
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Medellín",
+          "addressRegion": "Antioquia",
+          "addressCountry": "CO"
+        },
+        "currenciesAccepted": "COP",
+        "priceRange": "$$"
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+    <div id="app"></div>
+
+    <!-- Región para notificaciones accesibles -->
+    <div id="toasts" class="toast-region" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <noscript>
+      <div class="noscript">
+        <h1>PARCHE Studio</h1>
+        <p>
+          Esta tienda necesita JavaScript para mostrar el catálogo y el carrito. Actívalo o
+          escríbenos directamente por WhatsApp para hacer tu pedido.
+        </p>
+      </div>
+    </noscript>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

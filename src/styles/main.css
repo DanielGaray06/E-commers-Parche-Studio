@@ -1,0 +1,9 @@
+/* ===========================================================================
+   PARCHE Studio — hoja de estilos principal
+   Orden de carga: tokens → base → componentes → páginas
+   =========================================================================== */
+
+@import './tokens.css';
+@import './base.css';
+@import './components.css';
+@import './pages.css';

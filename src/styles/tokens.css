@@ -1,0 +1,99 @@
+/* ===========================================================================
+   PARCHE Studio — Tokens de diseño
+   Única fuente de verdad para color, tipografía, espacio, radios y sombras.
+   Cambiar la identidad visual del sitio debe ser posible desde este archivo.
+   =========================================================================== */
+
+:root {
+  /* --- Color ------------------------------------------------------------- */
+  --c-ink: #0b0b0c; /* texto principal y navegación */
+  --c-ink-soft: #3f3f46;
+  --c-muted: #71717a;
+  --c-muted-2: #a1a1aa;
+  --c-line: #e4e4e7;
+  --c-line-strong: #d4d4d8;
+  --c-surface: #f6f6f7;
+  --c-surface-2: #efeff1;
+  --c-white: #ffffff;
+
+  /* Acento de marca: naranja eléctrico urbano. Texto oscuro encima (contraste AA). */
+  --c-accent: #ff4d00;
+  --c-accent-hover: #e64500;
+  --c-accent-soft: #fff1eb;
+  --c-on-accent: #0b0b0c;
+
+  /* Semánticos */
+  --c-success: #128a4b;
+  --c-success-soft: #e7f7ee;
+  --c-warning: #9a6700;
+  --c-danger: #c02525;
+  --c-danger-soft: #fdecec;
+  --c-whatsapp: #25d366;
+
+  /* --- Tipografía -------------------------------------------------------- */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Archivo', 'Inter', system-ui, 'Segoe UI', sans-serif;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.0625rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 2rem;
+  --fs-3xl: 2.75rem;
+  --fs-4xl: clamp(2.5rem, 7vw, 4.5rem);
+
+  --lh-tight: 1.05;
+  --lh-snug: 1.25;
+  --lh-normal: 1.6;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  /* --- Espacio ----------------------------------------------------------- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+  --sp-20: 5rem;
+  --sp-24: 6rem;
+
+  /* --- Layout ------------------------------------------------------------ */
+  --container: 1200px;
+  --container-wide: 1440px;
+  --gutter: var(--sp-5);
+
+  /* --- Radios y sombras -------------------------------------------------- */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 26px;
+  --r-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgb(11 11 12 / 6%);
+  --shadow-sm: 0 2px 8px rgb(11 11 12 / 7%);
+  --shadow-md: 0 10px 30px -12px rgb(11 11 12 / 22%);
+  --shadow-lg: 0 24px 60px -20px rgb(11 11 12 / 30%);
+
+  /* --- Movimiento -------------------------------------------------------- */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1); /* easeOutQuint suave */
+  --t-fast: 140ms var(--ease);
+  --t-base: 240ms var(--ease);
+  --t-slow: 420ms var(--ease);
+
+  /* --- Capas ------------------------------------------------------------- */
+  --z-header: 100;
+  --z-drawer: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+}
